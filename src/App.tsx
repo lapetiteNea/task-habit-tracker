@@ -1,122 +1,92 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useLocalStorage } from './hooks/useLocalStorage';
+import type { Task, Habit } from './types';
+import { TaskForm } from './components/TaskForm';
+import { TaskList } from './components/TaskList';
+import { HabitTracker } from './components/HabitTracker';
 
-function App() {
-  const [count, setCount] = useState(0)
+export function App() {
+  const [tasks, setTasks] = useLocalStorage<Task[]>('tasks', []);
+  const [habits, setHabits] = useLocalStorage<Habit[]>('habits', []);
+
+  // Tasks Handlers
+  const handleAddTask = (newTaskData: Omit<Task, 'id' | 'completed'>) => {
+    const newTask: Task = {
+      ...newTaskData,
+      id: crypto.randomUUID(),
+      completed: false,
+    };
+    setTasks([...tasks, newTask]);
+  };
+
+  const handleToggleTask = (id: string) => {
+    setTasks(
+      tasks.map((task) =>
+        task.id === id ? { ...task, completed: !task.completed } : task
+      )
+    );
+  };
+
+  const handleDeleteTask = (id: string) => {
+    setTasks(tasks.filter((task) => task.id !== id));
+  };
+
+  // Habits Handlers
+  const handleAddHabit = (title: string) => {
+    const newHabit: Habit = {
+      id: crypto.randomUUID(),
+      title,
+      streak: 0,
+      completedToday: false,
+    };
+    setHabits([...habits, newHabit]);
+  };
+
+  const handleToggleHabit = (id: string) => {
+    setHabits(
+      habits.map((habit) => {
+        if (habit.id === id) {
+          const isDone = !habit.completedToday;
+          return {
+            ...habit,
+            completedToday: isDone,
+            streak: isDone ? habit.streak + 1 : Math.max(0, habit.streak - 1),
+          };
+        }
+        return habit;
+      })
+    );
+  };
+
+  const handleDeleteHabit = (id: string) => {
+    setHabits(habits.filter((habit) => habit.id !== id));
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
+    <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
+      <h1>Task & Habit Tracker</h1>
+      
+      <section>
+        <h2>დავალებები (Tasks)</h2>
+        <TaskForm onAddTask={handleAddTask} />
+        <TaskList
+          tasks={tasks}
+          onToggleTask={handleToggleTask}
+          onDeleteTask={handleDeleteTask}
+        />
       </section>
 
-      <div className="ticks"></div>
+      <hr style={{ margin: '30px 0' }} />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
+      <section>
+        <HabitTracker
+          habits={habits}
+          onAddHabit={handleAddHabit}
+          onToggleHabit={handleToggleHabit}
+          onDeleteHabit={handleDeleteHabit}
+        />
       </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+    </div>
+  );
 }
 
-export default App
+export default App;
